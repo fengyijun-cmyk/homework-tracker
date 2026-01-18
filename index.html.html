@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no"/>
+<title>作业收集记录表 · 多作业版（含学号+名单管理）</title>
+<style>
+:root{
+  --bg:#f7f8fa;--card:#fff;--border:#dfe3ea;--text:#1a1a1a;--dim:#6b7280;
+  --accent:#2b6fff;--accent-bg:#ecf2ff;--good:#18794e;--good-bg:#eafff4;
+  --warn:#b96a00;--warn-bg:#fff9e8;--bad:#d7263d;--bad-bg:#fff5f5;
+  --radius-lg:16px;--radius-md:10px;--radius-sm:8px;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:var(--font);color:var(--text);padding:14px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px;flex-wrap:wrap}
+h1{font-size:1.05rem;margin:0;font-weight:700}
+.small{font-size:.78rem;color:var(--dim)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.06);padding:14px;margin-bottom:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.field{flex:1;min-width:150px}
+label{display:block;font-size:.78rem;color:var(--dim);margin-bottom:4px}
+input[type="text"],input[type="number"],input[type="date"],select{
+  width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:.95rem;background:#fff;outline:none
+}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
+button{border:1px solid var(--border);background:#fff;border-radius:12px;padding:10px 12px;font-weight:600}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+button.ghost{background:#f5f7ff}
+button.danger{background:#fff5f5;border-color:#f3c1c1;color:#b42318}
+.tabs{display:flex;gap:8px;overflow:auto;padding-bottom:6px}
+.tab{padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:#fff;white-space:nowrap}
+.tab.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+.hr{height:1px;background:var(--border);margin:10px -2px}
+.table{width:100%;border-collapse:collapse}
+.table th{font-size:.72rem;color:var(--dim);text-align:left;padding:8px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.03em}
+.table td{padding:10px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+.name{font-weight:700}
+.stbtn{display:inline-block;min-width:88px;text-align:center;border-radius:10px;padding:8px 10px;border:1px solid var(--border);font-weight:700}
+.st-miss{background:#fff5f5;color:var(--bad);border-color:#f3c1c1}
+.st-fix{background:#fff9e8;color:var(--warn);border-color:#f5d69d}
+.st-done{background:#eafff4;color:var(--good);border-color:#9fe3bf}
+.note{width:100%;min-width:160px}
+footer{color:var(--dim);font-size:.78rem;text-align:center;margin-top:8px}
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pill{border:1px solid var(--border);border-radius:999px;padding:6px 10px;font-size:.85rem}
+.pill.miss{background:#fff5f5;color:var(--bad)}
+.pill.fix{background:#fff9e8;color:var(--warn)}
+.pill.done{background:#eafff4;color:var(--good)}
+.util{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.hide{display:none}
+
+/* 学生总览列表 */
+.student-list{display:flex;flex-direction:column;gap:10px}
+.student-row{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;border:1px solid var(--border);border-radius:12px;padding:10px;background:#fff}
+.student-row .stu-name{min-width:140px;font-weight:800}
+.tags{display:flex;gap:8px;flex-wrap:wrap}
+.tag{border:1px solid var(--border);border-radius:999px;padding:6px 10px;font-size:.85rem}
+.tag.miss{background:#fff5f5;color:var(--bad)}
+.tag.fix{background:#fff9e8;color:var(--warn)}
+.tag.done{background:#eafff4;color:var(--good)}
+.statline{font-size:.78rem;color:var(--dim)}
+
+/* 批量更新工具条 */
+.bulkbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.bulkbar .sep{width:1px;height:20px;background:var(--border)}
+.checkbox{transform:scale(1.2)}
+
+/* 作业问题总览 */
+.issue-wrap{display:flex;flex-direction:column;gap:12px}
+.issue-card{border:1px solid var(--border);background:#fff;border-radius:12px;padding:12px}
+.issue-title{font-weight:800;margin-bottom:8px}
+.issue-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.issue-row .label{font-size:.85rem;color:var(--dim)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--border);border-radius:999px;padding:6px 10px;font-size:.85rem}
+.chip.miss{background:#fff5f5;color:var(--bad)}
+.chip.fix{background:#fff9e8;color:var(--warn)}
+</style>
+</head>
+<body>
+<header>
+  <h1>华文作业收集记录表 · 多作业版（含学号+名单管理）</h1>
+  <div class="small" id="saveInfo">未保存</div>
+</header>
+
+<!-- 顶部：模式 -->
+<section class="card">
+  <div class="row">
+    <div class="field" style="min-width:120px;flex:0 0 180px">
+      <label>视图</label>
+      <select id="viewMode">
+        <option value="assignment">按作业管理（默认）</option>
+        <option value="student">按学生查看（全班）</option>
+      </select>
+    </div>
+  </div>
+</section>
+
+<!-- ✅ 名单管理（新增） -->
+<section class="card" id="rosterCard">
+  <div class="row" style="align-items:flex-end">
+    <div class="field" style="flex:0 0 140px;min-width:120px">
+      <label>学号</label>
+      <input type="number" id="newStuId" placeholder="例如 36" min="1"/>
+    </div>
+    <div class="field" style="flex:1;min-width:180px">
+      <label>姓名</label>
+      <input type="text" id="newStuName" placeholder="例如：张三"/>
+    </div>
+    <div class="field" style="flex:0 0 120px">
+      <button class="primary" id="addStudentBtn">添加学生</button>
+    </div>
+  </div>
+
+  <div class="hr"></div>
+
+  <div class="row" style="align-items:flex-end">
+    <div class="field" style="flex:1;min-width:220px">
+      <label>删除学生</label>
+      <select id="deleteStudentSelect"></select>
+    </div>
+    <div class="field" style="flex:0 0 140px">
+      <button class="danger" id="deleteStudentBtn">删除选中</button>
+    </div>
+  </div>
+
+  <div class="small" style="margin-top:8px">
+    说明：添加/删除会自动同步到所有作业记录里；删除后该学生在所有作业的数据都会移除（不可恢复）。
+  </div>
+</section>
+
+<!-- 作业区：新增 / 切换 / 删除 -->
+<section class="card" id="assignmentBar">
+  <div class="row">
+    <div class="field" style="flex:2">
+      <label>新增作业名称</label>
+      <input type="text" id="newAssignmentName" placeholder="例如：第9课听写 / 作业本P12-15"/>
+    </div>
+    <div class="field" style="flex:0 0 130px">
+      <label>日期</label>
+      <input type="date" id="newAssignmentDate"/>
+    </div>
+    <div class="field" style="flex:0 0 120px;align-self:flex-end">
+      <button class="primary" id="addAssignmentBtn">新增作业</button>
+    </div>
+  </div>
+  <div class="hr"></div>
+  <div class="small">点选下方标签切换作业；全部学生都「✅ 完成」时，可删除该作业。</div>
+  <div class="tabs" id="assignmentTabs"></div>
+  <div class="util">
+    <button id="deleteAssignmentBtn" class="ghost">删除当前作业</button>
+    <span class="small" id="allDoneHint"></span>
+  </div>
+</section>
+
+<!-- 按作业管理 -->
+<section class="card" id="byAssignment">
+  <div class="row" style="align-items:center;justify-content:space-between">
+    <div class="small" id="currentAssignmentTitle">当前：—</div>
+    <div class="pills">
+      <span class="pill miss">❌ 未交</span>
+      <span class="pill fix">📝 订正</span>
+      <span class="pill done">✅ 完成</span>
+    </div>
+  </div>
+
+  <!-- 批量更新工具条 -->
+  <div class="bulkbar">
+    <strong class="small">批量更新：</strong>
+    <button id="bulkAllMissing">全班设为 ❌未交</button>
+    <button id="bulkAllFix">全班设为 📝订正</button>
+    <button id="bulkAllDone">全班设为 ✅完成</button>
+    <span class="sep"></span>
+    <span class="small">对已勾选学生：</span>
+    <select id="bulkSelectStatus" style="flex:0 0 140px">
+      <option value="0">设为 ❌未交</option>
+      <option value="1">设为 📝订正</option>
+      <option value="2">设为 ✅完成</option>
+    </select>
+    <button id="bulkApplySelected" class="ghost">应用</button>
+    <button id="bulkClearSelection" class="ghost">清除勾选</button>
+  </div>
+
+  <div style="overflow:auto">
+    <table class="table">
+      <thead>
+        <tr>
+          <th style="width:40px"><input type="checkbox" id="selectAll" class="checkbox" title="全选/全不选"/></th>
+          <th>学号·姓名</th>
+          <th>状态</th>
+          <th>备注</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyAssignment"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 作业有问题总览（置于学生名单上方） -->
+<section class="card hide" id="issueSection">
+  <div class="row" style="align-items:center;justify-content:space-between">
+    <div class="small"><strong>作业有问题总览：</strong>按作业汇总需要跟进的学生（可点名条切换状态）。</div>
+  </div>
+  <div id="issueOverview" class="issue-wrap"></div>
+</section>
+
+<!-- 按学生查看（全班） -->
+<section class="card hide" id="byStudent">
+  <div class="row" style="align-items:center;justify-content:space-between">
+    <div class="small">全班学生列表：每位学生旁边显示【未交 / 订正】的作业（✅完成的不显示）。点标签可切换状态。</div>
+    <div class="pills">
+      <span class="pill miss">❌ 未交</span>
+      <span class="pill fix">📝 订正</span>
+    </div>
+  </div>
+  <div id="studentOverview" class="student-list"></div>
+</section>
+
+<footer>数据仅保存在本机浏览器 · 适配 iPhone Safari · 可离线使用</footer>
+
+<script>
+/* ===== 默认学生名单（首次使用时填入；之后可自行增删） ===== */
+const DEFAULT_STUDENTS = [
+{ id:1, name:"义山" },{ id:2, name:"鲍子彦" },{ id:3, name:"涂芊熙" },
+{ id:4, name:"陈梓悦" },{ id:5, name:"蔡韶真" },{ id:6, name:"蔡政宏" },
+{ id:7, name:"蔡政原" },{ id:8, name:"范靖瑄" },{ id:9, name:"叶恩宇" },
+{ id:10, name:"吴恩琪" },{ id:11, name:"JOSH" },{ id:12, name:"苏楷懿" },
+{ id:13, name:"KEIGO" },{ id:14, name:"许文瑜" },{ id:15, name:"林彥璁" },
+{ id:16, name:"柳泓宇" },{ id:17, name:"李佳蔚" },{ id:18, name:"李凯祾" },
+{ id:19, name:"林恩企" },{ id:20, name:"刘傑豪" },{ id:21, name:"彭灵希" },
+{ id:22, name:"翁康軒" },{ id:23, name:"黄震恩" },{ id:24, name:"黄震熙" },
+{ id:25, name:"傅子瑜" },{ id:26, name:"刘佳勳" },{ id:27, name:"卓慧芝" },
+{ id:28, name:"胡淳曦" },{ id:29, name:"黄薇霓" },{ id:30, name:"楊淨耀" },
+{ id:31, name:"ZABELLE" },{ id:32, name:"翟元" },{ id:33, name:"郑圣杰" },
+{ id:34, name:"周欣悦" },{ id:35, name:"潘帟洁" }
+];
+
+/* ===== 常量&存储 ===== */
+const STORAGE_KEY = "hwTracker_multi_v8_roster_manage";
+const Status = { MISSING:0, FIX:1, DONE:2 };
+const StatusText = ["❌ 未交","📝 订正","✅ 完成"];
+const clsBtn = ["st-miss","st-fix","st-done"];
+const clsTag = ["miss","fix","done"];
+
+/* 工具 */
+function todayStr(){
+  const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+function sortStudentsInPlace(arr){
+  arr.sort((a,b)=>Number(a.id)-Number(b.id));
+}
+function freshState(){
+  const students = JSON.parse(JSON.stringify(DEFAULT_STUDENTS));
+  sortStudentsInPlace(students);
+  return {students, assignments:[], lastSaved:null};
+}
+
+/* 读写 */
+function load(){
+  const raw=localStorage.getItem(STORAGE_KEY);
+  if(!raw) return freshState();
+  try{
+    const data=JSON.parse(raw);
+    if(!Array.isArray(data.students) || data.students.length===0){
+      data.students = JSON.parse(JSON.stringify(DEFAULT_STUDENTS));
+    }
+    sortStudentsInPlace(data.students);
+
+    // 确保每个作业都有每个学生的记录
+    data.assignments = Array.isArray(data.assignments) ? data.assignments : [];
+    data.assignments.forEach(a=>{
+      if(!a.students) a.students = {};
+      data.students.forEach(s=>{
+        const sid=String(s.id);
+        if(!(sid in a.students)) a.students[sid]={status:0,note:""};
+      });
+      // 移除已不存在的学生
+      Object.keys(a.students).forEach(sid=>{
+        if(!data.students.some(s=>String(s.id)===sid)) delete a.students[sid];
+      });
+    });
+    return data;
+  }catch(e){
+    console.warn("Parse fail:",e);
+    return freshState();
+  }
+}
+
+let state=load();
+let currentIdx=state.assignments.length?0:-1;
+
+function save(){
+  state.lastSaved=Date.now();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  updateSaveInfo();
+}
+function updateSaveInfo(){
+  const el=document.getElementById("saveInfo");
+  if(!state.lastSaved){ el.textContent="未保存"; return; }
+  const d=new Date(state.lastSaved);
+  el.textContent=`已保存 ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+}
+
+/* DOM */
+const tabsEl=document.getElementById("assignmentTabs");
+const delBtn=document.getElementById("deleteAssignmentBtn");
+const newName=document.getElementById("newAssignmentName");
+const newDate=document.getElementById("newAssignmentDate");
+const tbodyAss=document.getElementById("tbodyAssignment");
+const hintAllDone=document.getElementById("allDoneHint");
+const curTitle=document.getElementById("currentAssignmentTitle");
+
+const byAssignment=document.getElementById("byAssignment");
+const byStudent=document.getElementById("byStudent");
+const studentOverview=document.getElementById("studentOverview");
+const issueSection=document.getElementById("issueSection");
+const issueOverview=document.getElementById("issueOverview");
+
+/* 名单管理 DOM */
+const newStuId=document.getElementById("newStuId");
+const newStuName=document.getElementById("newStuName");
+const addStudentBtn=document.getElementById("addStudentBtn");
+const deleteStudentSelect=document.getElementById("deleteStudentSelect");
+const deleteStudentBtn=document.getElementById("deleteStudentBtn");
+
+/* 渲染：删除下拉名单 */
+function renderDeleteStudentOptions(){
+  deleteStudentSelect.innerHTML="";
+  state.students.forEach(s=>{
+    const opt=document.createElement("option");
+    opt.value=String(s.id);
+    opt.textContent=`${s.id}. ${s.name}`;
+    deleteStudentSelect.appendChild(opt);
+  });
+  deleteStudentBtn.disabled = (state.students.length===0);
+}
+
+/* 渲染：作业标签 */
+function renderTabs(){
+  tabsEl.innerHTML="";
+  state.assignments.forEach((a,idx)=>{
+    const t=document.createElement("button");
+    t.className="tab"+(idx===currentIdx?" active":"");
+    t.textContent=a.name||("未命名作业"+(idx+1));
+    t.title=a.date||"";
+    t.onclick=()=>{ currentIdx=idx; render(); };
+    tabsEl.appendChild(t);
+  });
+  delBtn.disabled=(currentIdx<0);
+}
+
+/* 渲染：按作业管理 */
+function renderAssignmentTable(){
+  tbodyAss.innerHTML="";
+  const selectAllEl=document.getElementById("selectAll");
+  if(selectAllEl) selectAllEl.checked=false;
+
+  if(currentIdx<0){
+    curTitle.textContent="当前：—";
+    hintAllDone.textContent="";
+    return;
+  }
+  const a=state.assignments[currentIdx];
+  curTitle.textContent=`当前：${a.name||"未命名作业"}（${a.date||"无日期"}）`;
+
+  let allDone=true;
+  state.students.forEach(s=>{
+    const sid=String(s.id);
+
+    const row=document.createElement("tr");
+
+    const tdCheck=document.createElement("td");
+    const cb=document.createElement("input");
+    cb.type="checkbox";
+    cb.className="checkbox selectBox";
+    cb.dataset.sid=sid;
+    tdCheck.appendChild(cb);
+    row.appendChild(tdCheck);
+
+    const tdName=document.createElement("td");
+    tdName.innerHTML=`<div class="name">${s.id}. ${s.name}</div>`;
+    row.appendChild(tdName);
+
+    const tdSt=document.createElement("td");
+    const btn=document.createElement("div");
+    const st=a.students[sid]?.status ?? 0;
+    btn.className="stbtn "+clsBtn[st];
+    btn.textContent=StatusText[st];
+    btn.onclick=()=>{
+      const cur=a.students[sid]?.status ?? 0;
+      const nxt=(cur+1)%3;
+      a.students[sid]={...a.students[sid], status:nxt};
+      save(); render();
+    };
+    tdSt.appendChild(btn);
+    row.appendChild(tdSt);
+
+    const tdNote=document.createElement("td");
+    const ip=document.createElement("input");
+    ip.type="text";
+    ip.className="note";
+    ip.placeholder="备注（可选）";
+    ip.value=a.students[sid]?.note ?? "";
+    ip.oninput=()=>{ a.students[sid]={...a.students[sid], note:ip.value}; save(); };
+    tdNote.appendChild(ip);
+    row.appendChild(tdNote);
+
+    tbodyAss.appendChild(row);
+
+    if((a.students[sid]?.status ?? 0)!==2) allDone=false;
+  });
+
+  hintAllDone.textContent=allDone ? "🎉 此作业全班均已完成，可安全删除。" : "";
+
+  const selectAll=document.getElementById("selectAll");
+  if(selectAll){
+    selectAll.onchange=()=>{ document.querySelectorAll('#tbodyAssignment .selectBox').forEach(cb=>cb.checked=selectAll.checked); };
+  }
+}
+
+/* 渲染：按学生（全班） */
+function renderStudentOverviewAll(){
+  studentOverview.innerHTML="";
+  state.students.forEach(s=>{
+    const sid=String(s.id);
+
+    const row=document.createElement("div");
+    row.className="student-row";
+
+    const nameEl=document.createElement("div");
+    nameEl.className="stu-name";
+    nameEl.textContent=`${s.id}. ${s.name}`;
+    row.appendChild(nameEl);
+
+    const tags=document.createElement("div");
+    tags.className="tags";
+
+    let missCnt=0, fixCnt=0, doneCnt=0;
+    state.assignments.forEach(a=>{
+      const st=a.students[sid]?.status ?? 0;
+      if(st===0 || st===1){
+        const tag=document.createElement("button");
+        tag.className=`tag ${clsTag[st]}`;
+        tag.textContent=`${a.name||"未命名"}：${StatusText[st]}`;
+        tag.title="点一下切换状态";
+        tag.onclick=()=>{
+          const cur=a.students[sid]?.status ?? 0;
+          const nxt=(cur+1)%3;
+          a.students[sid]={...a.students[sid], status:nxt};
+          save(); renderStudentOverviewAll(); renderIssueOverview();
+        };
+        tags.appendChild(tag);
+      }
+      if(st===0) missCnt++; else if(st===1) fixCnt++; else doneCnt++;
+    });
+
+    if(missCnt===0 && fixCnt===0){
+      const allok=document.createElement("span");
+      allok.className="tag done";
+      allok.textContent="✅ 全部完成";
+      tags.appendChild(allok);
+    }
+
+    row.appendChild(tags);
+
+    const stat=document.createElement("div");
+    stat.className="statline";
+    stat.textContent=`统计：未交 ${missCnt} · 订正 ${fixCnt} · 完成 ${doneCnt}`;
+    row.appendChild(stat);
+
+    studentOverview.appendChild(row);
+  });
+}
+
+/* 渲染：作业有问题总览（置顶） */
+function renderIssueOverview(){
+  issueOverview.innerHTML="";
+  if(!state.assignments.length){ issueSection.classList.add("hide"); return; }
+
+  let anyIssue=false;
+
+  state.assignments.forEach(a=>{
+    const missList=[], fixList=[];
+    state.students.forEach(s=>{
+      const sid=String(s.id);
+      const st=a.students?.[sid]?.status ?? 0;
+      if(st===0) missList.push(s);
+      if(st===1) fixList.push(s);
+    });
+
+    if(missList.length===0 && fixList.length===0) return;
+    anyIssue=true;
+
+    const card=document.createElement("div");
+    card.className="issue-card";
+
+    const title=document.createElement("div");
+    title.className="issue-title";
+    const total=state.students.length;
+    const doneCount= total - missList.length - fixList.length;
+    title.textContent=`${a.name||"未命名作业"}（未交 ${missList.length} · 订正 ${fixList.length} · 完成 ${doneCount}）`;
+    card.appendChild(title);
+
+    const row1=document.createElement("div");
+    row1.className="issue-row";
+    const lb1=document.createElement("span");
+    lb1.className="label"; lb1.textContent="❌ 未交：";
+    row1.appendChild(lb1);
+
+    const chips1=document.createElement("div"); chips1.className="chips";
+    missList.forEach(s=>{
+      const sid=String(s.id);
+      const c=document.createElement("button");
+      c.className="chip miss";
+      c.textContent=`${s.id}. ${s.name}`;
+      c.title="点一下切换该生在本作业的状态";
+      c.onclick=()=>{
+        const cur=a.students[sid]?.status ?? 0;
+        const nxt=(cur+1)%3;
+        a.students[sid]={...a.students[sid], status:nxt};
+        save(); renderStudentOverviewAll(); renderIssueOverview();
+      };
+      chips1.appendChild(c);
+    });
+    if(!missList.length){
+      const none=document.createElement("span");
+      none.className="small"; none.textContent="（无）";
+      chips1.appendChild(none);
+    }
+    row1.appendChild(chips1);
+    card.appendChild(row1);
+
+    const row2=document.createElement("div");
+    row2.className="issue-row";
+    const lb2=document.createElement("span");
+    lb2.className="label"; lb2.textContent="📝 订正：";
+    row2.appendChild(lb2);
+
+    const chips2=document.createElement("div"); chips2.className="chips";
+    fixList.forEach(s=>{
+      const sid=String(s.id);
+      const c=document.createElement("button");
+      c.className="chip fix";
+      c.textContent=`${s.id}. ${s.name}`;
+      c.title="点一下切换该生在本作业的状态";
+      c.onclick=()=>{
+        const cur=a.students[sid]?.status ?? 0;
+        const nxt=(cur+1)%3;
+        a.students[sid]={...a.students[sid], status:nxt};
+        save(); renderStudentOverviewAll(); renderIssueOverview();
+      };
+      chips2.appendChild(c);
+    });
+    if(!fixList.length){
+      const none=document.createElement("span");
+      none.className="small"; none.textContent="（无）";
+      chips2.appendChild(none);
+    }
+    row2.appendChild(chips2);
+    card.appendChild(row2);
+
+    issueOverview.appendChild(card);
+  });
+
+  if(!anyIssue){
+    const ok=document.createElement("div");
+    ok.className="issue-card";
+    ok.innerHTML="<div class='issue-title'>🎉 所有作业均已完成，无需跟进。</div>";
+    issueOverview.appendChild(ok);
+  }
+
+  issueSection.classList.remove("hide");
+}
+
+/* 批量工具 */
+function getSelectedSids(){
+  return Array.from(document.querySelectorAll('#tbodyAssignment .selectBox:checked')).map(cb=>cb.dataset.sid);
+}
+function setAllStatus(status){
+  if(currentIdx<0) return;
+  const a=state.assignments[currentIdx];
+  state.students.forEach(s=>{
+    const sid=String(s.id);
+    a.students[sid]={...a.students[sid], status:status};
+  });
+  save(); render();
+}
+function setSelectedStatus(status){
+  if(currentIdx<0) return;
+  const a=state.assignments[currentIdx];
+  const sids=getSelectedSids();
+  if(!sids.length){ alert("请先勾选要更新的学生。"); return; }
+  sids.forEach(sid=>{ a.students[sid]={...a.students[sid], status:status}; });
+  save(); render();
+}
+
+/* 总渲染 */
+function render(){
+  updateSaveInfo();
+  sortStudentsInPlace(state.students);
+  renderDeleteStudentOptions();
+  renderTabs();
+  renderAssignmentTable();
+
+  const mode=document.getElementById("viewMode").value;
+  if(mode==="assignment"){
+    byAssignment.classList.remove("hide");
+    issueSection.classList.add("hide");
+    byStudent.classList.add("hide");
+  }else{
+    byAssignment.classList.add("hide");
+    renderIssueOverview();
+    renderStudentOverviewAll();
+    byStudent.classList.remove("hide");
+  }
+}
+
+/* ===== 事件：作业 ===== */
+document.getElementById("addAssignmentBtn").onclick=()=>{
+  const name=newName.value.trim();
+  const date=newDate.value.trim()||todayStr();
+  if(!name){ alert("请输入作业名称"); return; }
+
+  const rec={};
+  state.students.forEach(s=>{ rec[String(s.id)]={status:0, note:""}; });
+
+  const id=(typeof crypto!=="undefined" && crypto.randomUUID)? crypto.randomUUID(): String(Date.now());
+  state.assignments.unshift({id, name, date, students:rec});
+  currentIdx=0; newName.value=""; newDate.value="";
+  save(); render();
+};
+
+document.getElementById("deleteAssignmentBtn").onclick=()=>{
+  if(currentIdx<0) return;
+  const a=state.assignments[currentIdx];
+  const allDone=state.students.every(s=>(a.students[String(s.id)]?.status??0)===2);
+  const msg= allDone ? `确认删除「${a.name}」吗？（全班已完成）` : `「${a.name}」尚有未完成记录，仍要删除吗？`;
+  if(confirm(msg)){
+    state.assignments.splice(currentIdx,1);
+    currentIdx=state.assignments.length?0:-1;
+    save(); render();
+  }
+};
+
+document.getElementById("viewMode").onchange=()=>render();
+
+/* ===== 事件：批量 ===== */
+document.getElementById("bulkAllMissing").onclick=()=>setAllStatus(0);
+document.getElementById("bulkAllFix").onclick=()=>setAllStatus(1);
+document.getElementById("bulkAllDone").onclick=()=>setAllStatus(2);
+document.getElementById("bulkApplySelected").onclick=()=>{
+  const status=Number(document.getElementById("bulkSelectStatus").value);
+  setSelectedStatus(status);
+};
+document.getElementById("bulkClearSelection").onclick=()=>{
+  const sel=document.getElementById("selectAll"); if(sel) sel.checked=false;
+  document.querySelectorAll('#tbodyAssignment .selectBox').forEach(cb=>cb.checked=false);
+};
+document.addEventListener("change",(e)=>{
+  if(e.target && e.target.id==="selectAll"){
+    document.querySelectorAll('#tbodyAssignment .selectBox').forEach(cb=>cb.checked=e.target.checked);
+  }
+});
+
+/* ===== ✅ 事件：名单管理（新增） ===== */
+addStudentBtn.onclick=()=>{
+  const idVal = Number(newStuId.value);
+  const nameVal = (newStuName.value || "").trim();
+
+  if(!Number.isInteger(idVal) || idVal<=0){
+    alert("学号请输入正整数（例如 36）。");
+    return;
+  }
+  if(!nameVal){
+    alert("请输入学生姓名。");
+    return;
+  }
+  if(state.students.some(s=>Number(s.id)===idVal)){
+    alert(`学号 ${idVal} 已存在，请换一个学号。`);
+    return;
+  }
+
+  // 添加学生到名单
+  state.students.push({id:idVal, name:nameVal});
+  sortStudentsInPlace(state.students);
+
+  // 同步到所有作业
+  state.assignments.forEach(a=>{
+    const sid=String(idVal);
+    if(!a.students) a.students={};
+    a.students[sid]={status:0, note:""};
+  });
+
+  newStuId.value="";
+  newStuName.value="";
+  save(); render();
+};
+
+deleteStudentBtn.onclick=()=>{
+  if(state.students.length===0){ alert("当前没有学生可删除。"); return; }
+  const sid = deleteStudentSelect.value;
+  const target = state.students.find(s=>String(s.id)===String(sid));
+  if(!target){ alert("找不到该学生。"); return; }
+
+  const ok = confirm(`确定删除：${target.id}. ${target.name} ？\n（会从所有作业记录中移除，无法恢复）`);
+  if(!ok) return;
+
+  // 从名单移除
+  state.students = state.students.filter(s=>String(s.id)!==String(sid));
+
+  // 从所有作业移除该学生记录
+  state.assignments.forEach(a=>{
+    if(a.students && (String(sid) in a.students)) delete a.students[String(sid)];
+  });
+
+  save(); render();
+};
+
+/* 启动：如果没有作业，给一个示例作业 */
+if(!state.assignments.length){
+  const rec={};
+  state.students.forEach(s=>{ rec[String(s.id)]={status:0, note:""}; });
+  state.assignments.push({id:String(Date.now()), name:"第8课听写（示例）", date:todayStr(), students:rec});
+  currentIdx=0;
+  save();
+}
+
+render();
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) updateSaveInfo();});
+</script>
+</body>
+</html>
